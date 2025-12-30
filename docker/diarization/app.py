@@ -40,7 +40,7 @@ async def load_models():
         print("Loading diarization pipeline...")
         diarization_pipeline = Pipeline.from_pretrained(
             "pyannote/speaker-diarization-3.1",
-            use_auth_token=hf_token
+            token=hf_token
         )
         diarization_pipeline.to(torch.device(DEVICE))
         print("Diarization pipeline loaded.")
@@ -49,7 +49,7 @@ async def load_models():
         print("Loading embedding model...")
         embedding_model = Model.from_pretrained(
             "pyannote/wespeaker-voxceleb-resnet34-LM",
-            use_auth_token=hf_token
+            token=hf_token
         )
         embedding_model.to(torch.device(DEVICE))
         print("Embedding model loaded.")

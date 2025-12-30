@@ -67,9 +67,7 @@ Real-time multilingual speech translation with speaker diarization. Designed to 
 2. **Clone and install**:
    ```bash
    cd ~/GitHub/turbo-translate
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -e .
+   uv sync
    ```
 
 3. **Connect to VPN** to access black-panther
@@ -104,7 +102,7 @@ Real-time multilingual speech translation with speaker diarization. Designed to 
 
 2. **Start the application**:
    ```bash
-   turbo-translate
+   uv run turbo-translate
    ```
 
 3. **Click "Start Listening"** or press `Alt+Space`
