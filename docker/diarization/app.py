@@ -306,3 +306,19 @@ async def delete_speaker(speaker_id: str):
         emb_file.unlink()
 
     return JSONResponse({"status": "deleted", "speaker_id": speaker_id})
+
+
+@app.patch("/speakers/{speaker_id}")
+async def rename_speaker(speaker_id: str, data: dict):
+    """Rename an enrolled speaker."""
+    if speaker_id not in speaker_embeddings:
+        raise HTTPException(status_code=404, detail="Speaker not found")
+
+    new_name = data.get("name", "").strip()
+    if not new_name:
+        raise HTTPException(status_code=400, detail="Name is required")
+
+    speaker_embeddings[speaker_id]["name"] = new_name
+    save_speaker_embeddings()
+
+    return JSONResponse({"status": "renamed", "speaker_id": speaker_id, "name": new_name})

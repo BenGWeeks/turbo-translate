@@ -111,6 +111,9 @@ class TranscriptBubble(QFrame):
             f"  border-radius: 8px;"
             f"  border-left: 3px solid {self.entry.speaker_color};"
             f"}}"
+            f"QLabel {{"
+            f"  background-color: transparent;"
+            f"}}"
         )
 
 
@@ -183,7 +186,6 @@ class TranscriptPanel(QWidget):
         self._messages_layout = QVBoxLayout(self._container)
         self._messages_layout.setContentsMargins(16, 16, 16, 16)
         self._messages_layout.setSpacing(12)
-        self._messages_layout.addStretch()
 
         scroll.setWidget(self._container)
         layout.addWidget(scroll)
@@ -220,21 +222,16 @@ class TranscriptPanel(QWidget):
         )
         self._entries.append(entry)
 
-        # Add bubble widget
+        # Add bubble widget at top (newest first)
         bubble = TranscriptBubble(entry)
-        self._messages_layout.insertWidget(self._messages_layout.count() - 1, bubble)
-
-        # Scroll to bottom
-        self._scroll.verticalScrollBar().setValue(
-            self._scroll.verticalScrollBar().maximum()
-        )
+        self._messages_layout.insertWidget(0, bubble)
 
     def clear(self):
         """Clear all entries."""
         self._entries.clear()
 
         # Remove all bubbles
-        while self._messages_layout.count() > 1:
+        while self._messages_layout.count() > 0:
             item = self._messages_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()

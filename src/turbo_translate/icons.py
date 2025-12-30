@@ -102,12 +102,13 @@ def get_chevron_up_icon(color: str = "#888888", size: int = 20) -> QIcon:
 def get_tray_icon(listening: bool = False, size: int = 64) -> QIcon:
     """Generate system tray icon - blue orb."""
     from PyQt6.QtCore import Qt
-    from PyQt6.QtGui import QPainter, QRadialGradient, QBrush
+    from PyQt6.QtGui import QPainter, QRadialGradient, QBrush, QImage
 
-    pixmap = QPixmap(QSize(size, size))
-    pixmap.fill(Qt.GlobalColor.transparent)
+    # Use QImage with ARGB32 for better tray compatibility
+    image = QImage(size, size, QImage.Format.Format_ARGB32)
+    image.fill(Qt.GlobalColor.transparent)
 
-    painter = QPainter(pixmap)
+    painter = QPainter(image)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
     cx, cy = size / 2, size / 2
@@ -122,10 +123,10 @@ def get_tray_icon(listening: bool = False, size: int = 64) -> QIcon:
         gradient.setColorAt(0.7, QColor("#3b82f6"))
         gradient.setColorAt(1, QColor("#1d4ed8"))
     else:
-        # Dimmer blue when idle
-        gradient.setColorAt(0, QColor("#60a5fa"))
-        gradient.setColorAt(0.7, QColor("#2563eb"))
-        gradient.setColorAt(1, QColor("#1e40af"))
+        # Grey when idle
+        gradient.setColorAt(0, QColor("#9ca3af"))
+        gradient.setColorAt(0.7, QColor("#6b7280"))
+        gradient.setColorAt(1, QColor("#374151"))
 
     painter.setBrush(QBrush(gradient))
     painter.setPen(Qt.PenStyle.NoPen)
@@ -133,7 +134,7 @@ def get_tray_icon(listening: bool = False, size: int = 64) -> QIcon:
 
     painter.end()
 
-    return QIcon(pixmap)
+    return QIcon(QPixmap.fromImage(image))
 
 
 # Import QColor here to avoid issues

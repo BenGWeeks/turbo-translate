@@ -84,7 +84,7 @@ class AudioRecorder:
         """Get PipeWire audio sources on Linux."""
         try:
             result = subprocess.run(
-                ["pactl", "list", "sources", "short"],
+                ["pactl", "list", "sources"],
                 capture_output=True,
                 text=True,
                 timeout=5,
@@ -93,17 +93,34 @@ class AudioRecorder:
                 return []
 
             sources = []
-            for line in result.stdout.strip().split("\n"):
-                if not line:
-                    continue
-                parts = line.split("\t")
-                if len(parts) >= 2:
-                    sources.append({
-                        "index": int(parts[0]),
-                        "name": parts[1],
-                        "channels": 2,
-                        "sample_rate": 48000,
-                    })
+            current = {}
+            for line in result.stdout.split("\n"):
+                line = line.strip()
+                if line.startswith("Source #"):
+                    if current and "description" in current:
+                        sources.append(current)
+                    current = {"index": int(line.split("#")[1])}
+                elif line.startswith("Name:"):
+                    current["pipewire_name"] = line.split(":", 1)[1].strip()
+                elif line.startswith("Description:"):
+                    current["name"] = line.split(":", 1)[1].strip()
+                    current["description"] = current["name"]
+                elif line.startswith("Sample Specification:"):
+                    # Parse sample rate from "s16le 2ch 48000Hz"
+                    spec = line.split(":", 1)[1].strip()
+                    for part in spec.split():
+                        if part.endswith("Hz"):
+                            current["sample_rate"] = int(part[:-2])
+                        elif part.endswith("ch"):
+                            current["channels"] = int(part[:-2])
+
+            # Add last source
+            if current and "description" in current:
+                sources.append(current)
+
+            # Filter out monitor sources (outputs)
+            sources = [s for s in sources if ".monitor" not in s.get("pipewire_name", "")]
+
             return sources
         except Exception:
             return []

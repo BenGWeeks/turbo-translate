@@ -358,12 +358,24 @@ class TranslationPipeline:
                     seg.text, detected_lang, self.config.target_language
                 )
 
+            # Try to identify speaker by voice
+            speaker_name = None
+            try:
+                id_result = self.diarization.identify_speaker(audio_data)
+                if id_result and id_result.get("speaker_id") != -1:
+                    speaker_name = id_result.get("speaker_name")
+                    if id_result.get("confidence", 0) > 0.6:
+                        speaker_id = hash(speaker_name) % 8  # Map to color index
+            except Exception:
+                pass
+
             results.append({
                 "text": seg.text,
                 "translation": translation,
                 "start": seg.start,
                 "end": seg.end,
                 "speaker_id": speaker_id,
+                "speaker_name": speaker_name,
                 "language": detected_lang,
             })
 
@@ -381,3 +393,17 @@ class TranslationPipeline:
             WAV audio data
         """
         return self.tts.synthesize(text, language)
+
+    def enroll_speaker(self, audio_data: bytes, name: str, is_user: bool = False) -> dict | None:
+        """Enroll a speaker profile."""
+        try:
+            return self.diarization.enroll_speaker(audio_data, name, is_user)
+        except APIError:
+            return None
+
+    def identify_speaker(self, audio_data: bytes) -> dict | None:
+        """Identify a speaker from audio."""
+        try:
+            return self.diarization.identify_speaker(audio_data)
+        except APIError:
+            return None
