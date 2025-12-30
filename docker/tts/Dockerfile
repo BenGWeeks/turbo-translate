@@ -1,5 +1,5 @@
 # Text-to-Speech Service using Coqui TTS
-FROM nvidia/cuda:12.1-runtime-ubuntu22.04
+FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
