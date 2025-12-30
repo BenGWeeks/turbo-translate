@@ -1,0 +1,29 @@
+# Turbo Translate Configuration
+# Add these to your ai-stack .env file
+
+# =================================================================
+# TURBO TRANSLATE SERVICES
+# =================================================================
+
+# Path to turbo-translate repo (for building diarization/tts services)
+TURBO_TRANSLATE_PATH=/path/to/turbo-translate
+
+# Service Ports
+TURBO_WHISPER_PORT=8100
+TURBO_DIARIZATION_PORT=8101
+TURBO_TRANSLATION_PORT=8102
+TURBO_TTS_PORT=8103
+
+# Whisper model (large-v3 recommended for multilingual)
+TURBO_WHISPER_MODEL=large-v3
+
+# Languages to load for translation (comma-separated)
+TURBO_TRANSLATION_LANGUAGES=en,hu,de,es
+
+# HuggingFace token (required for diarization)
+# HUGGING_FACE_HUB_TOKEN=your_token_here
+
+# Pyannote Model Access:
+# Accept the model licenses at HuggingFace:
+# - https://huggingface.co/pyannote/speaker-diarization-3.1
+# - https://huggingface.co/pyannote/segmentation-3.0

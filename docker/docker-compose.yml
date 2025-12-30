@@ -1,0 +1,111 @@
+# Docker Compose for Turbo Translate Backend Services
+# Deploy this on black-panther (192.168.1.89)
+#
+# Requires NVIDIA GPU with CUDA support
+# Install nvidia-container-toolkit before running
+
+services:
+  # Whisper Speech-to-Text Service
+  whisper:
+    image: fedirz/faster-whisper-server:latest-cuda
+    container_name: turbo-translate-whisper
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - whisper-cache:/root/.cache/huggingface
+    environment:
+      - WHISPER__MODEL=large-v3
+      - WHISPER__DEVICE=cuda
+      - WHISPER__COMPUTE_TYPE=float16
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Speaker Diarization Service
+  diarization:
+    build:
+      context: ./diarization
+      dockerfile: Dockerfile
+    container_name: turbo-translate-diarization
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    volumes:
+      - diarization-cache:/root/.cache/huggingface
+      - speaker-embeddings:/app/embeddings
+    environment:
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - DEVICE=cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Translation Service (LibreTranslate)
+  translation:
+    image: libretranslate/libretranslate:latest
+    container_name: turbo-translate-translation
+    restart: unless-stopped
+    ports:
+      - "8002:5000"
+    volumes:
+      - translation-cache:/home/libretranslate/.local
+    environment:
+      - LT_LOAD_ONLY=en,hu,de,es
+      - LT_DISABLE_WEB_UI=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/languages"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Text-to-Speech Service
+  tts:
+    build:
+      context: ./tts
+      dockerfile: Dockerfile
+    container_name: turbo-translate-tts
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    volumes:
+      - tts-cache:/root/.cache
+    environment:
+      - DEVICE=cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  whisper-cache:
+  diarization-cache:
+  speaker-embeddings:
+  translation-cache:
+  tts-cache:

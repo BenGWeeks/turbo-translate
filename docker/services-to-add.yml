@@ -1,0 +1,114 @@
+# Turbo Translate Services
+# Add these to your ai-stack docker-compose.yml
+#
+# These services provide multilingual speech translation with speaker diarization
+
+  # =================================================================
+  # TURBO TRANSLATE SERVICES
+  # =================================================================
+
+  # Whisper Speech-to-Text (multilingual)
+  turbo-whisper:
+    image: fedirz/faster-whisper-server:latest-cuda
+    container_name: turbo-whisper
+    restart: unless-stopped
+    ports:
+      - "${TURBO_WHISPER_PORT:-8100}:8000"
+    volumes:
+      - ${DOCKER_DATA_PATH:-./data}/turbo-whisper-cache:/root/.cache/huggingface
+    environment:
+      - WHISPER__MODEL=${TURBO_WHISPER_MODEL:-large-v3}
+      - WHISPER__DEVICE=cuda
+      - WHISPER__COMPUTE_TYPE=float16
+    networks:
+      - ai-stack
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Speaker Diarization Service (pyannote-audio)
+  turbo-diarization:
+    build:
+      context: ${TURBO_TRANSLATE_PATH:-./turbo-translate}/docker/diarization
+      dockerfile: Dockerfile
+    container_name: turbo-diarization
+    restart: unless-stopped
+    ports:
+      - "${TURBO_DIARIZATION_PORT:-8101}:8001"
+    volumes:
+      - ${DOCKER_DATA_PATH:-./data}/turbo-diarization-cache:/root/.cache/huggingface
+      - ${DOCKER_DATA_PATH:-./data}/turbo-speaker-embeddings:/app/embeddings
+    environment:
+      - HUGGINGFACE_TOKEN=${HUGGING_FACE_HUB_TOKEN}
+      - DEVICE=cuda
+    networks:
+      - ai-stack
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Translation Service (LibreTranslate)
+  turbo-translation:
+    image: libretranslate/libretranslate:latest
+    container_name: turbo-translation
+    restart: unless-stopped
+    ports:
+      - "${TURBO_TRANSLATION_PORT:-8102}:5000"
+    volumes:
+      - ${DOCKER_DATA_PATH:-./data}/turbo-translation-cache:/home/libretranslate/.local
+    environment:
+      - LT_LOAD_ONLY=${TURBO_TRANSLATION_LANGUAGES:-en,hu,de,es}
+      - LT_DISABLE_WEB_UI=true
+    networks:
+      - ai-stack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/languages"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Text-to-Speech Service (Coqui TTS)
+  turbo-tts:
+    build:
+      context: ${TURBO_TRANSLATE_PATH:-./turbo-translate}/docker/tts
+      dockerfile: Dockerfile
+    container_name: turbo-tts
+    restart: unless-stopped
+    ports:
+      - "${TURBO_TTS_PORT:-8103}:8003"
+    volumes:
+      - ${DOCKER_DATA_PATH:-./data}/turbo-tts-cache:/root/.cache
+    environment:
+      - DEVICE=cuda
+    networks:
+      - ai-stack
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
